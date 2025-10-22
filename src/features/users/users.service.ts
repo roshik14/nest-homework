@@ -24,8 +24,7 @@ export class UsersService {
     private userTokenService: UserTokensService,
   ) {}
 
-  async findMe(token?: string): Promise<User | null> {
-    console.log(token);
+  async findMe(token?: string): Promise<User> {
     const userTokenData = await this.userTokenService.getToken(token ?? '');
     if (!userTokenData) {
       throw new UnauthorizedException('Not authorized');

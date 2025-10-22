@@ -43,9 +43,26 @@ export class UsersController {
     return this.usersService.findMe(request.cookies['refresh_token'] as string);
   }
 
+  @Put('me')
+  async updateMe(@Body() userInfo: UpdateUserDto, @Req() request: Request) {
+    const user = await this.usersService.findMe(
+      request.cookies['refresh_token'] as string,
+    );
+    return this.usersService.updateOne(user.id, userInfo);
+  }
+
   @Put(':id')
   update(@Param('id') id: number, @Body() userInfo: UpdateUserDto) {
     return this.usersService.updateOne(id, userInfo);
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMe(@Req() request: Request) {
+    const user = await this.usersService.findMe(
+      request.cookies['refresh_token'] as string,
+    );
+    return this.usersService.delete(user.id);
   }
 
   @Delete(':id')
