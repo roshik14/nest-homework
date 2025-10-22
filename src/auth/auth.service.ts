@@ -76,7 +76,7 @@ export class AuthService {
     userId: number,
     response: Response,
   ) {
-    const { accessToken, refreshToken } = await this.getTokens(
+    const { accessToken, refreshToken } = await this.generateTokens(
       userId,
       username,
     );
@@ -104,7 +104,7 @@ export class AuthService {
     return true;
   }
 
-  private async getTokens(userId: number, username: string) {
+  private async generateTokens(userId: number, username: string) {
     const payload = { sub: userId, username };
 
     return {
