@@ -19,6 +19,10 @@ export class UserTokensService {
     return this.repository.softDeleteByToken(refreshToken);
   }
 
+  async deleteTokenByUserId(userId: number) {
+    return this.repository.softDeleteByUserId(userId);
+  }
+
   async saveToken(data: DeepPartial<UserToken>) {
     return this.repository.save(data);
   }

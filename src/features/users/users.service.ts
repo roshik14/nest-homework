@@ -84,6 +84,7 @@ export class UsersService {
     if (!existedUser) {
       throw new NotFoundException(`User with id=${id} is not existing `);
     }
+    await this.userTokenService.deleteTokenByUserId(id);
     return await this.usersRepository.softDelete(existedUser.id);
   }
 

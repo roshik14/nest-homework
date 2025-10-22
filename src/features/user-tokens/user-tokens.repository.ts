@@ -20,6 +20,10 @@ export class UserTokensRepository extends Repository<UserToken> {
     return this.softDelete({ refreshToken });
   }
 
+  async softDeleteByUserId(userId: number): Promise<UpdateResult> {
+    return this.softDelete({ userId });
+  }
+
   async updateOneById(
     id: number,
     refreshToken: string,
