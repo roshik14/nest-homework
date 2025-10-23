@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
@@ -7,12 +8,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { UsersService } from 'src/features/users';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
+    private usersService: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -22,9 +25,16 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
-      await this.jwtService.verifyAsync(token, {
+      const { sub: userId } = await this.jwtService.verifyAsync<{
+        sub: string;
+      }>(token, {
         secret: this.configService.get('JWT_SECRET'),
       });
+      const user = await this.usersService.findOne(Number(userId));
+      if (!user) {
+        throw new BadRequestException("User doesn't exists");
+      }
+      request['user'] = user;
     } catch {
       throw new UnauthorizedException('Token invalid');
     }

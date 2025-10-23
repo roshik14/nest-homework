@@ -1,5 +1,5 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { UserToken } from '../entities/userToken.entity';
+import { UserToken } from '../entities/user-tokens.entity';
 import { User } from '../entities/users.entity';
 
 export default (): TypeOrmModuleOptions => ({

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserToken } from 'src/entities/userToken.entity';
+import { UserToken } from 'src/entities/user-tokens.entity';
 import { Repository, UpdateResult, DataSource } from 'typeorm';
 
 @Injectable()

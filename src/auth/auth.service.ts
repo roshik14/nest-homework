@@ -8,9 +8,6 @@ import { LoginUserDto } from './dto/loginUser.dto';
 import { compare, hash } from 'bcrypt';
 import { UsersService, CreateUserDto, UserTokensService } from '../features';
 import { JwtService } from '@nestjs/jwt';
-import { Request, Response } from 'express';
-import dayjs from 'dayjs';
-import { UserToken } from '../entities/userToken.entity';
 
 @Injectable()
 export class AuthService {
@@ -20,10 +17,13 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(
-    { username: login, email, password, age, aboutInfo }: CreateUserDto,
-    response: Response,
-  ) {
+  async register({
+    username: login,
+    email,
+    password,
+    age,
+    aboutInfo,
+  }: CreateUserDto) {
     const passwordHash = await hash(password, 10);
     const user = await this.usersService.createOne({
       username: login,
@@ -32,13 +32,14 @@ export class AuthService {
       age,
       aboutInfo,
     });
-    return this.getNewTokens(user.username, user.id, response);
+    const tokens = await this.generateTokens(user.id, user.username);
+    return {
+      ...tokens,
+      userId: user.id,
+    };
   }
 
-  async login(
-    { email, password }: LoginUserDto,
-    response: Response,
-  ): Promise<{ access_token: string }> {
+  async login({ email, password }: LoginUserDto) {
     const user = await this.usersService.findOneByEmail(email);
 
     if (!user) {
@@ -48,11 +49,14 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('User password is invalid');
     }
-    return this.getNewTokens(user.username, user.id, response);
+    const tokens = await this.generateTokens(user.id, user.username);
+    return {
+      ...tokens,
+      userId: user.id,
+    };
   }
 
-  async refresh(request: Request, response: Response) {
-    const oldToken = request.cookies['refresh_token'] as string;
+  async refresh(oldToken: string) {
     const savedToken = await this.userTokensService.getToken(oldToken);
     if (!savedToken) {
       throw new UnauthorizedException('refresh token is expired');
@@ -61,47 +65,11 @@ export class AuthService {
     if (!user) {
       throw new ForbiddenException('No user by this token');
     }
-    return this.getNewTokens(user.username, user.id, response);
+    return this.generateTokens(user.id, user.username);
   }
 
-  async logout(request: Request, response: Response) {
-    const token = request.cookies['refresh_token'] as string;
-    response.clearCookie('refresh_token');
-    await this.userTokensService.deleteToken(token);
-    return true;
-  }
-
-  private async getNewTokens(
-    username: string,
-    userId: number,
-    response: Response,
-  ) {
-    const { accessToken, refreshToken } = await this.generateTokens(
-      userId,
-      username,
-    );
-    await this.saveRefreshToken({ refreshToken, userId }, response);
-    return {
-      access_token: accessToken,
-    };
-  }
-
-  private async saveRefreshToken(
-    { refreshToken, userId }: Pick<UserToken, 'userId' | 'refreshToken'>,
-    response: Response,
-  ) {
-    const token = await this.userTokensService.getTokenByUserId(userId);
-    if (userId === token?.userId) {
-      await this.userTokensService.deleteToken(token.refreshToken);
-    }
-    const expires = dayjs(new Date()).add(30, 'day').toDate();
-    await this.userTokensService.saveToken({
-      refreshToken,
-      userId,
-      expiresAt: expires,
-    });
-    response.cookie('refresh_token', refreshToken, { expires, httpOnly: true });
-    return true;
+  async logout(refreshToken: string) {
+    return this.userTokensService.deleteToken(refreshToken);
   }
 
   private async generateTokens(userId: number, username: string) {

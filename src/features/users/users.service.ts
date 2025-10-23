@@ -3,7 +3,6 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from 'src/entities/users.entity';
 import {
@@ -12,7 +11,7 @@ import {
   UpdateUserResponseDto,
   UsersQueryDto,
   UsersResponseDto,
-} from './dto/users.dto';
+} from './dto';
 import { compare } from 'bcrypt';
 import { UsersRepository } from './users.repository';
 import { UserTokensService } from '../user-tokens/user-tokens.service';
@@ -23,18 +22,6 @@ export class UsersService {
     private usersRepository: UsersRepository,
     private userTokenService: UserTokensService,
   ) {}
-
-  async findMe(token?: string): Promise<User> {
-    const userTokenData = await this.userTokenService.getToken(token ?? '');
-    if (!userTokenData) {
-      throw new UnauthorizedException('Not authorized');
-    }
-    const user = await this.findOne(userTokenData.userId);
-    if (!user) {
-      throw new NotFoundException('No such user');
-    }
-    return user;
-  }
 
   async findOne(id: number): Promise<User | null> {
     return this.usersRepository.findOneById(id);
@@ -87,8 +74,11 @@ export class UsersService {
     return await this.usersRepository.softDelete(existedUser.id);
   }
 
-  async changePassword(currentPassword: string, newPassword: string) {
-    const userId = 1;
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+    userId: number,
+  ) {
     const user = await this.usersRepository.findOneById(userId);
     if (!user) {
       throw new NotFoundException('User not found');

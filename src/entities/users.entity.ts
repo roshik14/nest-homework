@@ -5,6 +5,7 @@ import { BaseEntity } from './base.entity';
 export class User extends BaseEntity {
   @Column()
   username: string;
+
   @Column()
   email: string;
 
@@ -13,6 +14,7 @@ export class User extends BaseEntity {
 
   @Column()
   age: number;
+
   @Column({ name: 'about_info' })
   aboutInfo: string;
 }

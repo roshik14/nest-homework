@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserTokensRepository } from './user-tokens.repository';
-import { UserToken } from 'src/entities/userToken.entity';
+import { UserToken } from 'src/entities/user-tokens.entity';
 import { DeepPartial } from 'typeorm';
 
 @Injectable()

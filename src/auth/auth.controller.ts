@@ -5,57 +5,100 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
   Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto, AuthGuard } from '../features';
+import {
+  CreateUserDto,
+  AuthGuard,
+  UserTokensService,
+  UserDecorator,
+} from '../features';
+import type { UserDecoratorData } from '../features';
 import { LoginUserDto } from './dto/loginUser.dto';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { UserToken } from 'src/entities/user-tokens.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private userTokensService: UserTokensService,
+  ) {}
 
   @Post('register')
-  register(
+  async register(
     @Body() userInfo: CreateUserDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.register(userInfo, response);
+    const { accessToken, refreshToken, userId } =
+      await this.authService.register(userInfo);
+    await this.saveRefreshToken({ refreshToken, userId }, response);
+    return { access_token: accessToken };
   }
 
   @ApiBearerAuth()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(
+  async login(
     @Body() userLogin: LoginUserDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.login(userLogin, response);
+    const { accessToken, refreshToken, userId } =
+      await this.authService.login(userLogin);
+    await this.saveRefreshToken({ refreshToken, userId }, response);
+    return { access_token: accessToken };
   }
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @Post('refresh')
-  refresh(
-    @Req() request: Request,
+  async refresh(
+    @UserDecorator() requestData: UserDecoratorData,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.refresh(request, response);
+    const { accessToken, refreshToken } = await this.authService.refresh(
+      requestData.refreshToken,
+    );
+    await this.saveRefreshToken(
+      { refreshToken, userId: requestData.user.id },
+      response,
+    );
+    return { access_token: accessToken };
   }
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @Post('logout')
-  logout(
-    @Req() request: Request,
+  async logout(
+    @UserDecorator() requestData: UserDecoratorData,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.logout(request, response);
+    await this.authService.logout(requestData.refreshToken);
+    response.clearCookie('refresh_token');
+    return true;
+  }
+
+  private async saveRefreshToken(
+    { refreshToken, userId }: Pick<UserToken, 'userId' | 'refreshToken'>,
+    response: Response,
+  ) {
+    const token = await this.userTokensService.getTokenByUserId(userId);
+    if (userId === token?.userId) {
+      await this.userTokensService.deleteToken(token.refreshToken);
+    }
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 30);
+    await this.userTokensService.saveToken({
+      refreshToken,
+      userId,
+      expiresAt: expires,
+    });
+    response.cookie('refresh_token', refreshToken, { expires, httpOnly: true });
+    return true;
   }
 }
