@@ -1,20 +1,17 @@
 import {
   Body,
   Controller,
-  DefaultValuePipe,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UpdateUserDto, ChangePasswordDto } from './dto';
-import { Sort } from './dto';
+import { UpdateUserDto, ChangePasswordDto, UsersQueryDto } from './dto';
 import { AuthGuard } from '../common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserDecorator } from './users.decorator';
@@ -27,14 +24,8 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get()
-  findMany(
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('sort', new DefaultValuePipe(Sort.ASC))
-    sort: Sort,
-    @Query('login') login?: string,
-  ) {
-    return this.usersService.findMany({ offset, limit, username: login, sort });
+  findMany(@Query() query: UsersQueryDto) {
+    return this.usersService.findMany(query);
   }
 
   @Put('change-password')
