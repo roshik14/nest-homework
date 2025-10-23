@@ -13,8 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateUserDto, ChangePasswordDto } from './dto';
 import { Sort } from './dto';
 import { AuthGuard } from '../common';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -36,6 +35,18 @@ export class UsersController {
     @Query('login') login?: string,
   ) {
     return this.usersService.findMany({ offset, limit, username: login, sort });
+  }
+
+  @Put('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @UserDecorator() { user }: UserDecoratorData,
+  ) {
+    return this.usersService.changePassword(
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+      user.id,
+    );
   }
 
   @Get('me')
@@ -66,17 +77,5 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: number) {
     return this.usersService.delete(id);
-  }
-
-  @Put('change-password')
-  async changePassword(
-    @Body() changePasswordDto: ChangePasswordDto,
-    @UserDecorator() { user }: UserDecoratorData,
-  ) {
-    return this.usersService.changePassword(
-      changePasswordDto.currentPassword,
-      changePasswordDto.newPassword,
-      user.id,
-    );
   }
 }

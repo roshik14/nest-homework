@@ -65,7 +65,11 @@ export class AuthService {
     if (!user) {
       throw new ForbiddenException('No user by this token');
     }
-    return this.generateTokens(user.id, user.username);
+    const tokens = await this.generateTokens(user.id, user.username);
+    return {
+      ...tokens,
+      userId: user.id,
+    };
   }
 
   async logout(refreshToken: string) {

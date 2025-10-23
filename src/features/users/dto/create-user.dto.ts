@@ -5,15 +5,19 @@ export class CreateUserDto {
   @ApiProperty()
   @IsString()
   username: string;
+
   @ApiProperty()
   @IsEmail()
   email: string;
+
   @ApiProperty()
   @IsString()
   password: string;
+
   @ApiProperty()
   @IsInt()
   age: number;
+
   @ApiProperty()
   @IsString()
   @MaxLength(1000)

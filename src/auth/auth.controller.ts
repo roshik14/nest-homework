@@ -55,19 +55,14 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
   @Post('refresh')
   async refresh(
     @UserDecorator() requestData: UserDecoratorData,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const { accessToken, refreshToken } = await this.authService.refresh(
-      requestData.refreshToken,
-    );
-    await this.saveRefreshToken(
-      { refreshToken, userId: requestData.user.id },
-      response,
-    );
+    const { accessToken, refreshToken, userId } =
+      await this.authService.refresh(requestData.refreshToken);
+    await this.saveRefreshToken({ refreshToken, userId }, response);
     return { access_token: accessToken };
   }
 
