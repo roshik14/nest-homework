@@ -16,7 +16,7 @@ export class ResetBalanceService {
     });
     const isFailed = await job.isFailed();
     if (isFailed) {
-      this.logger.warn(
+      this.logger.error(
         `Resetting balance job failed. Reason: ${job.failedReason}`,
       );
       throw new InternalServerErrorException(job.failedReason);
