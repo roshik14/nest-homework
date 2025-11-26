@@ -9,13 +9,14 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto, ChangePasswordDto, UsersQueryDto } from './dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserDecorator } from './users.decorator';
 import type { UserDecoratorData } from './users.types';
-import { CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { GetActiveUsersQueryDto } from './dto/get-active-users.dto';
 
@@ -25,6 +26,7 @@ import { GetActiveUsersQueryDto } from './dto/get-active-users.dto';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @UseInterceptors(CacheInterceptor)
   @CacheKey('users')
   @CacheTTL(30)
   @Get()
@@ -49,6 +51,7 @@ export class UsersController {
     return this.usersService.findOne(user.id);
   }
 
+  @UseInterceptors(CacheInterceptor)
   @CacheKey('myProfile')
   @CacheTTL(30)
   @Put('me')
